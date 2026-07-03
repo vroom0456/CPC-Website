@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Premium College Photography Gallery</title>
+<!-- Add inside <head> -->
+<link rel="stylesheet" href="https://unpkg.com/photoswipe@5/dist/photoswipe.css">
+
+<!-- Add inside your Gallery Header (where the title/date are rendered) -->
+<div class="flex flex-wrap gap-4 mt-8 justify-center z-20">
+    <button id="btn-share-event" class="flex items-center px-6 py-3 bg-white text-black text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors rounded">
+        <i data-lucide="share-2" class="h-4 w-4 mr-2"></i> Share Event
+    </button>
+    <a id="btn-download-zip" href="#" class="flex items-center px-6 py-3 bg-accent text-white text-xs uppercase tracking-widest font-bold hover:bg-yellow-600 transition-colors rounded">
+        <i data-lucide="archive" class="h-4 w-4 mr-2"></i> Download ZIP
+    </a>
+</div>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
