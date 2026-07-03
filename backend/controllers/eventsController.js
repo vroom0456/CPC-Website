@@ -1,9 +1,6 @@
 const eventsService = require('../services/eventsService');
 const driveService = require('../services/driveService');
 const db = require('../config/db');
-const archiver = require('archiver');
-const driveService = require('../services/driveService');
-const exifr = require('exifr'); // For extracting Camera/Lens data
 
 // GET /api/events
 // Returns all events with a resolved cover image URL (fetches + caches
@@ -40,50 +37,6 @@ async function listEvents(req, res) {
   }
 }
 
-// Admin: Create Event
-exports.createEvent = async (req, res) => {
-    const { title, date, description, folderId, tags } = req.body;
-    try {
-        // Fetch images and parse EXIF data
-        const files = await driveService.getFilesInFolder(folderId);
-        
-        // Insert event into DB (Assuming SQLite/Postgres)
-        const eventId = await db.insertEvent({ title, date, description, folderId });
-        
-        res.status(201).json({ message: 'Event created successfully', eventId });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to create event' });
-    }
-};
-
-// Feature: Bulk ZIP Download
-exports.downloadGalleryZip = async (req, res) => {
-    const eventId = req.params.id;
-    try {
-        const event = await db.getEventById(eventId);
-        if (!event) return res.status(404).json({ error: 'Event not found' });
-
-        const files = await driveService.getFilesInFolder(event.folderId);
-
-        // Set response headers for ZIP download
-        res.attachment(`${event.title.replace(/\s+/g, '_')}_Gallery.zip`);
-        
-        const archive = archiver('zip', { zlib: { level: 9 } });
-        archive.on('error', (err) => { throw err; });
-        archive.pipe(res);
-
-        // Stream each file from Google Drive into the ZIP
-        for (const file of files) {
-            const fileStream = await driveService.downloadFileStream(file.id);
-            archive.append(fileStream, { name: file.name });
-        }
-
-        await archive.finalize();
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to generate ZIP' });
-    }
-};
-
 // GET /api/events/:id/photos
 // Returns the full, tagged photo list for one event's Drive folder.
 async function getEventPhotos(req, res) {
@@ -110,5 +63,54 @@ async function getEventPhotos(req, res) {
     res.status(500).json({ error: 'Failed to load gallery photos.' });
   }
 }
+
+// ===========================================================
+// ADMIN-ONLY ENDPOINTS — disabled for the MVP launch.
+// Not wired into routes/events.js and not exported below, so none
+// of this runs today. Kept here (instead of deleted) so re-enabling
+// admin features later is a quick job — see the guide below.
+//
+// Before turning these back on you will also need to:
+//   npm install archiver exifr          (in backend/)
+//   Implement db.insertEvent() / db.getEventById() in config/db.js
+//   or eventsService.js (they don't exist yet — getAllEvents/getEventById
+//   in eventsService.js are the closest reference implementations)
+// ===========================================================
+
+// async function createEvent(req, res) {
+//   const { title, date, description, folderId, tags } = req.body;
+//   try {
+//     const files = await driveService.getFilesInFolder(folderId);
+//     const eventId = await db.insertEvent({ title, date, description, folderId });
+//     res.status(201).json({ message: 'Event created successfully', eventId });
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to create event' });
+//   }
+// }
+
+// async function downloadGalleryZip(req, res) {
+//   const archiver = require('archiver');
+//   const eventId = req.params.id;
+//   try {
+//     const event = await db.getEventById(eventId);
+//     if (!event) return res.status(404).json({ error: 'Event not found' });
+//
+//     const files = await driveService.getFilesInFolder(event.folderId);
+//     res.attachment(`${event.title.replace(/\s+/g, '_')}_Gallery.zip`);
+//
+//     const archive = archiver('zip', { zlib: { level: 9 } });
+//     archive.on('error', (err) => { throw err; });
+//     archive.pipe(res);
+//
+//     for (const file of files) {
+//       const fileStream = await driveService.downloadFileStream(file.id);
+//       archive.append(fileStream, { name: file.name });
+//     }
+//
+//     await archive.finalize();
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to generate ZIP' });
+//   }
+// }
 
 module.exports = { listEvents, getEventPhotos };
