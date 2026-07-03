@@ -1,0 +1,26 @@
+body {
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.5s, color 0.5s;
+}
+
+/* Responsive Masonry Grid */
+.masonry-grid { column-gap: 12px; }
+.masonry-item { break-inside: avoid; margin-bottom: 12px; }
+
+/* View Transitions */
+.fade-enter { opacity: 0; transform: translateY(10px); }
+.fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+.dark ::-webkit-scrollbar-thumb { background: #444; }
+
+/* Lightbox & Slideshow */
+#lightbox { transition: opacity 0.4s ease; }
+#lightbox.hidden-lb { opacity: 0; pointer-events: none; }
+#lightbox.visible-lb { opacity: 1; pointer-events: auto; }
+.progress-bar { transition: width 3s linear; }
