@@ -1,77 +1,134 @@
-import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5/dist/photoswipe-lightbox.esm.js';
+// ===========================================
+// LIGHTBOX — fullscreen photo viewer
+// Custom-built (no external library) so it works as a plain
+// <script> tag with zero build step. Talks to the #lightbox markup
+// already in index.html.
+// ===========================================
 
-let lightbox;
+let lbIndex = 0;
+let slideshowInterval = null;
+const SLIDESHOW_MS = 4000;
 
-export function initLightbox(photos) {
-    if (lightbox) {
-        lightbox.destroy();
-    }
+const lightboxEl = document.getElementById('lightbox');
+const lbImage = document.getElementById('lb-image');
+const lbCounter = document.getElementById('lb-counter');
+const lbDownload = document.getElementById('lb-download');
+const lbTag = document.getElementById('lb-tag');
+const slideshowProgress = document.getElementById('slideshow-progress');
+const slideshowIcon = document.getElementById('slideshow-icon');
 
-    // Map your API photos to PhotoSwipe format
-    const pswpItems = photos.map(photo => ({
-        src: photo.url, // High-res URL
-        w: photo.width || 1920, // EXIF width from backend
-        h: photo.height || 1080, // EXIF height from backend
-        alt: photo.name,
-        // Custom data for EXIF and Share
-        camera: photo.cameraModel || 'Unknown Camera',
-        shareUrl: photo.url
-    }));
-
-    lightbox = new PhotoSwipeLightbox({
-        dataSource: pswpItems,
-        pswpModule: () => import('https://unpkg.com/photoswipe@5/dist/photoswipe.esm.js'),
-        zoom: true, // Enables pinch-to-zoom
-        wheelToZoom: true,
-        bgOpacity: 0.95,
-    });
-
-    // Add Custom "Share Image" Button to Lightbox Toolbar
-    lightbox.on('uiRegister', function() {
-        lightbox.pswp.ui.registerElement({
-            name: 'share-button',
-            order: 9,
-            isButton: true,
-            html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>',
-            onClick: (event, el) => {
-                const currentPhoto = lightbox.pswp.currSlide.data;
-                if (navigator.share) {
-                    navigator.share({
-                        title: 'College Photography Club',
-                        text: 'Check out this photo!',
-                        url: currentPhoto.shareUrl
-                    }).catch(console.error);
-                } else {
-                    // Fallback to clipboard
-                    navigator.clipboard.writeText(currentPhoto.shareUrl);
-                    alert('Image link copied to clipboard!');
-                }
-            }
-        });
-    });
-
-    // Add EXIF Data display at the bottom of the image
-    lightbox.on('uiRegister', function() {
-        lightbox.pswp.ui.registerElement({
-            name: 'exif-indicator',
-            order: 9,
-            isButton: false,
-            appendTo: 'wrapper',
-            html: '',
-            onInit: (el, pswp) => {
-                pswp.on('change', () => {
-                    const camera = pswp.currSlide.data.camera;
-                    el.innerHTML = `<div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:white; font-family:sans-serif; font-size:12px; background:rgba(0,0,0,0.6); padding:4px 12px; border-radius:20px;">📸 ${camera}</div>`;
-                });
-            }
-        });
-    });
-
-    lightbox.init();
+function openLightbox(index) {
+  lbIndex = index;
+  lightboxEl.classList.remove('hidden-lb');
+  lightboxEl.classList.add('visible-lb');
+  document.body.style.overflow = 'hidden';
+  updateLightboxImage();
 }
 
-export function openLightboxAtIndex(index) {
-    if (lightbox) {
-        lightbox.loadAndOpen(index);
-    }
+function closeLightbox() {
+  lightboxEl.classList.remove('visible-lb');
+  lightboxEl.classList.add('hidden-lb');
+  document.body.style.overflow = '';
+  stopSlideshow();
 }
+
+function nextImage() {
+  lbIndex = (lbIndex + 1) % filteredPhotos.length;
+  updateLightboxImage();
+}
+
+function prevImage() {
+  lbIndex = (lbIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+  updateLightboxImage();
+}
+
+function updateLightboxImage() {
+  const photo = filteredPhotos[lbIndex];
+  if (!photo) return;
+
+  // Blur-up: dim the old frame briefly while the next image loads
+  lbImage.style.opacity = '0';
+
+  const preload = new Image();
+  preload.onload = () => {
+    lbImage.src = photo.url;
+    lbImage.style.opacity = '1';
+  };
+  preload.src = photo.url;
+
+  lbCounter.textContent = `${lbIndex + 1} / ${filteredPhotos.length}`;
+  lbDownload.href = photo.downloadUrl || photo.url;
+
+  // Tag / camera badge (camera info only shows once the backend
+  // starts sending EXIF data — see the re-enable guide below)
+  const badgeParts = [photo.tag, photo.cameraModel].filter(Boolean);
+  if (badgeParts.length) {
+    lbTag.textContent = badgeParts.join(' · ');
+    lbTag.classList.remove('hidden');
+  } else {
+    lbTag.classList.add('hidden');
+  }
+
+  if (slideshowInterval) resetSlideshowProgress();
+}
+
+// --- Slideshow ---
+function toggleSlideshow() {
+  if (slideshowInterval) stopSlideshow();
+  else startSlideshow();
+}
+
+function toggleSlideshowDirect() {
+  if (!lightboxEl.classList.contains('visible-lb')) openLightbox(0);
+  if (!slideshowInterval) startSlideshow();
+}
+
+function startSlideshow() {
+  slideshowIcon.setAttribute('data-lucide', 'pause');
+  lucide.createIcons();
+  resetSlideshowProgress();
+  slideshowInterval = setInterval(nextImage, SLIDESHOW_MS);
+}
+
+function stopSlideshow() {
+  clearInterval(slideshowInterval);
+  slideshowInterval = null;
+  slideshowProgress.style.width = '0%';
+  slideshowIcon.setAttribute('data-lucide', 'play');
+  lucide.createIcons();
+}
+
+function resetSlideshowProgress() {
+  slideshowProgress.style.transition = 'none';
+  slideshowProgress.style.width = '0%';
+  // Force reflow so the transition below actually restarts
+  void slideshowProgress.offsetWidth;
+  slideshowProgress.style.transition = `width ${SLIDESHOW_MS}ms linear`;
+  slideshowProgress.style.width = '100%';
+}
+
+// --- Copy image link ---
+function copyImageLink() {
+  const photo = filteredPhotos[lbIndex];
+  if (!photo) return;
+  navigator.clipboard.writeText(photo.url)
+    .then(() => showToast('Image link copied to clipboard'))
+    .catch(() => showToast('Could not copy link'));
+}
+
+// --- Fullscreen toggle ---
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    lightboxEl.requestFullscreen?.().catch(() => showToast('Fullscreen not supported'));
+  } else {
+    document.exitFullscreen?.();
+  }
+}
+
+// --- Keyboard shortcuts ---
+document.addEventListener('keydown', (e) => {
+  if (lightboxEl.classList.contains('hidden-lb')) return;
+  if (e.key === 'ArrowRight') nextImage();
+  else if (e.key === 'ArrowLeft') prevImage();
+  else if (e.key === 'Escape') closeLightbox();
+});
