@@ -1,0 +1,127 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium College Photography Gallery</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Dark Mode Init Script (Prevents White Flash) -->
+  <script>
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  </script>
+
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            lightBg: '#FFFFFF', lightSurface: '#F5F5F7', lightText: '#1D1D1F',
+            darkBg: '#000000', darkSurface: '#111111', darkText: '#F5F5F7',
+            accent: '#D4AF37'
+          },
+          fontFamily: { sans: ['Lato', 'sans-serif'], display: ['Playfair Display', 'serif'] }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="font-sans bg-lightBg text-lightText dark:bg-darkBg dark:text-darkText selection:bg-accent selection:text-white min-h-screen flex flex-col">
+
+  <!-- Sticky Navbar -->
+  <nav id="navbar" class="fixed w-full z-40 top-0 px-4 md:px-8 py-4 flex justify-between items-center bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10 transition-transform duration-500">
+    <div onclick="goHome()" class="cursor-pointer hover:text-accent transition-colors flex items-center gap-2 group">
+      <i data-lucide="camera" class="h-5 w-5 group-hover:scale-110 transition-transform"></i>
+      <span class="text-xs uppercase tracking-widest font-bold hidden sm:inline">Photo Club</span>
+    </div>
+
+    <div class="flex items-center space-x-2 md:space-x-6">
+      <!-- Search (Home Only) -->
+      <div id="search-container" class="relative hidden sm:block transition-all">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"></i>
+        <input type="text" id="search-input" placeholder="Search events..." class="bg-lightSurface dark:bg-darkSurface text-xs pl-9 pr-4 py-2 rounded-full outline-none focus:ring-1 focus:ring-accent w-48 transition-all">
+      </div>
+
+      <!-- Theme Toggle -->
+      <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+        <i id="theme-icon" data-lucide="moon" class="h-5 w-5"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content App Container -->
+  <main id="app-container" class="fade-enter fade-enter-active flex-grow flex flex-col items-center w-full">
+    <!-- UI dynamically injected here -->
+  </main>
+
+  <!-- Floating Scroll to Top -->
+  <button id="scroll-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" class="fixed bottom-6 right-6 p-3 bg-accent text-white rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-30">
+    <i data-lucide="arrow-up" class="h-5 w-5"></i>
+  </button>
+
+  <!-- Fullscreen Minimalist Lightbox -->
+  <div id="lightbox" class="hidden-lb fixed inset-0 z-50 flex items-center justify-center bg-lightBg/95 dark:bg-darkBg/95 backdrop-blur-xl">
+
+    <!-- Slideshow Progress Bar -->
+    <div id="slideshow-progress" class="absolute top-0 left-0 h-1 bg-accent w-0 z-50"></div>
+
+    <div class="absolute top-0 w-full p-4 md:p-6 flex justify-between items-center z-50">
+      <div class="flex items-center gap-4">
+        <div id="lb-counter" class="text-xs uppercase tracking-widest font-bold"></div>
+        <button id="btn-slideshow" onclick="toggleSlideshow()" class="hover:text-accent transition-colors flex items-center gap-2">
+          <i id="slideshow-icon" data-lucide="play" class="h-4 w-4"></i>
+          <span class="text-[10px] uppercase tracking-widest hidden sm:inline">Slideshow</span>
+        </button>
+      </div>
+
+      <div class="flex items-center space-x-6">
+        <a id="lb-download" href="#" target="_blank" title="Download Original" class="hover:text-accent transition-colors">
+          <i data-lucide="download" class="h-5 w-5"></i>
+        </a>
+        <button onclick="closeLightbox()" class="hover:text-accent transition-colors">
+          <i data-lucide="x" class="h-6 w-6"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Arrows -->
+    <button onclick="prevImage()" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-40 p-2 hover:text-accent transition-colors">
+      <i data-lucide="chevron-left" class="h-10 w-10 font-light"></i>
+    </button>
+    <button onclick="nextImage()" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-40 p-2 hover:text-accent transition-colors">
+      <i data-lucide="chevron-right" class="h-10 w-10 font-light"></i>
+    </button>
+
+    <!-- Main Image -->
+    <img id="lb-image" src="" class="max-h-[85vh] max-w-[95vw] md:max-w-[90vw] object-contain transition-opacity duration-300 shadow-2xl rounded-sm">
+
+    <!-- Optional Photo Tag display in lightbox -->
+    <div id="lb-tag" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-widest bg-black/50 text-white px-3 py-1 rounded-full backdrop-blur-sm hidden"></div>
+  </div>
+
+  <!-- App scripts (load order matters: config -> api -> theme -> render -> lightbox -> main) -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/lightbox.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
