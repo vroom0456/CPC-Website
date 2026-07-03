@@ -1,30 +1,26 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Premium College Photography Gallery</title>
-<!-- Add inside <head> -->
-<link rel="stylesheet" href="https://unpkg.com/photoswipe@5/dist/photoswipe.css">
+  <meta name="description" content="Event photo galleries from the College Photography Club.">
 
-<!-- Add inside your Gallery Header (where the title/date are rendered) -->
-<div class="flex flex-wrap gap-4 mt-8 justify-center z-20">
-    <button id="btn-share-event" class="flex items-center px-6 py-3 bg-white text-black text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors rounded">
-        <i data-lucide="share-2" class="h-4 w-4 mr-2"></i> Share Event
-    </button>
-    <a id="btn-download-zip" href="#" class="flex items-center px-6 py-3 bg-accent text-white text-xs uppercase tracking-widest font-bold hover:bg-yellow-600 transition-colors rounded">
-        <i data-lucide="archive" class="h-4 w-4 mr-2"></i> Download ZIP
-    </a>
-</div>
+  <!-- Social preview (static for now — a per-event dynamic version needs
+       server-side rendering; see the re-enable guide below) -->
+  <meta property="og:title" content="College Photography Club">
+  <meta property="og:description" content="Event photo galleries from the College Photography Club.">
+  <meta property="og:type" content="website">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS & Lucide Icons -->
+  <!-- Tailwind CSS, Lucide Icons, QR generator -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <!-- Dark Mode Init Script (Prevents White Flash) -->
   <script>
@@ -52,12 +48,12 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="style/styles.css">
 </head>
 
 <body class="font-sans bg-lightBg text-lightText dark:bg-darkBg dark:text-darkText selection:bg-accent selection:text-white min-h-screen flex flex-col">
 
-  <!-- Sticky Navbar -->
+  <!-- Sticky Glass Navbar -->
   <nav id="navbar" class="fixed w-full z-40 top-0 px-4 md:px-8 py-4 flex justify-between items-center bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200 dark:border-white/10 transition-transform duration-500">
     <div onclick="goHome()" class="cursor-pointer hover:text-accent transition-colors flex items-center gap-2 group">
       <i data-lucide="camera" class="h-5 w-5 group-hover:scale-110 transition-transform"></i>
@@ -88,6 +84,17 @@
     <i data-lucide="arrow-up" class="h-5 w-5"></i>
   </button>
 
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    <div class="bg-lightBg dark:bg-darkSurface rounded-xl p-8 max-w-xs w-full text-center relative">
+      <button onclick="closeQrModal()" class="absolute top-4 right-4 hover:text-accent transition-colors">
+        <i data-lucide="x" class="h-5 w-5"></i>
+      </button>
+      <h3 class="text-sm uppercase tracking-widest font-bold mb-6">Scan to Open Gallery</h3>
+      <canvas id="qr-canvas" class="mx-auto rounded"></canvas>
+    </div>
+  </div>
+
   <!-- Fullscreen Minimalist Lightbox -->
   <div id="lightbox" class="hidden-lb fixed inset-0 z-50 flex items-center justify-center bg-lightBg/95 dark:bg-darkBg/95 backdrop-blur-xl">
 
@@ -103,7 +110,13 @@
         </button>
       </div>
 
-      <div class="flex items-center space-x-6">
+      <div class="flex items-center space-x-5">
+        <button onclick="copyImageLink()" title="Copy Image Link" class="hover:text-accent transition-colors">
+          <i data-lucide="link" class="h-5 w-5"></i>
+        </button>
+        <button onclick="toggleFullscreen()" title="Fullscreen" class="hover:text-accent transition-colors">
+          <i data-lucide="maximize" class="h-5 w-5"></i>
+        </button>
         <a id="lb-download" href="#" target="_blank" title="Download Original" class="hover:text-accent transition-colors">
           <i data-lucide="download" class="h-5 w-5"></i>
         </a>
@@ -124,7 +137,7 @@
     <!-- Main Image -->
     <img id="lb-image" src="" class="max-h-[85vh] max-w-[95vw] md:max-w-[90vw] object-contain transition-opacity duration-300 shadow-2xl rounded-sm">
 
-    <!-- Optional Photo Tag display in lightbox -->
+    <!-- Tag / camera info badge -->
     <div id="lb-tag" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-widest bg-black/50 text-white px-3 py-1 rounded-full backdrop-blur-sm hidden"></div>
   </div>
 
