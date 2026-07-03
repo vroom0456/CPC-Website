@@ -11,6 +11,11 @@ app.use(express.json());
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/events', eventsRouter);
 
+// Admin API — disabled for the MVP launch. Mount it here once it exists:
+// const adminRouter = require('./routes/admin');
+// app.use('/api/admin', adminRouter);
+// See the guide below for the full checklist.
+
 app.use((req, res) => res.status(404).json({ error: 'Not found.' }));
 
 app.listen(PORT, () => {
